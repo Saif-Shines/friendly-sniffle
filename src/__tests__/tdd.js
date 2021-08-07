@@ -4,6 +4,12 @@ import {Redirect as MockRedirect} from 'react-router'
 import {savePost as mockSavePost} from '../api'
 import {Editor} from '../post-editor/markup'
 
+jest.mock('react-router', () => {
+  return {
+    Redirect: jest.fn(() => null),
+  }
+})
+
 jest.mock('../api')
 
 afterEach(() => {
@@ -19,6 +25,9 @@ test('renders a form with title, content, tags, and  submit form', async () => {
     content: 'Test Content',
     tags: ['tag1', 'tag2'],
   }
+
+  const preDate = new Date().getTime()
+
   getByLabelText(/title/i).value = fakePost.title
   getByLabelText(/content/i).value = fakePost.content
   getByLabelText(/tags/i).value = fakePost.tags.join(',')
@@ -30,10 +39,15 @@ test('renders a form with title, content, tags, and  submit form', async () => {
 
   expect(mockSavePost).toHaveBeenCalledWith({
     ...fakePost,
+    date: expect.any(String),
     authorId: fakeUser.id,
   })
 
   expect(mockSavePost).toHaveBeenCalledTimes(1)
+  const postDate = new Date().getTime()
+  const date = new Date(mockSavePost.mock.calls[0][0].date).getTime()
+  expect(date).toBeGreaterThanOrEqual(preDate)
+  expect(date).toBeLessThanOrEqual(postDate)
 
   await wait(() => expect(MockRedirect).toHaveBeenCalledWith({to: '/'}, {}))
 })
